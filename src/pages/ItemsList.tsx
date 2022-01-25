@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { RouteComponentProps } from "react-router";
 import {
   IonButton,
@@ -30,17 +30,44 @@ import { getLogger } from "../core";
 import { AssignmentContext, conflicts } from "../core/item/provider";
 import { AuthContext } from "../core/auth/provider";
 import { ItemProperties } from "../core/item/ItemProperties";
+import { useNetwork } from "../core/useNetwork";
+import _ from "lodash";
 
 const log = getLogger("ItemsList");
 
+interface SortedMessages {
+  [key: string]: {
+    sender: string;
+    unread: number;
+    messages: ItemProperties[];
+  };
+}
+
 const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
+  const { networkStatus } = useNetwork();
   const { assignments, fetching, fetchingError } = useContext(AssignmentContext);
+  const sortedMessages = useMemo(() => {
+    const store: SortedMessages = {};
+    if (assignments == null) return [];
+    for (let ass of assignments) {
+      if (!store.hasOwnProperty(ass.sender)) {
+        store[ass.sender] = {
+          sender: ass.sender,
+          unread: 0,
+          messages: [],
+        };
+      }
+      store[ass.sender].messages.push(ass);
+      if (!ass.read) {
+        store[ass.sender].unread += 1;
+      }
+      store[ass.sender].messages = _.orderBy(store[ass.sender].messages, "created", "desc");
+    }
+    let values = Array.from(Object.values(store));
+    values = _.orderBy(values, (o) => o.messages[0].created, "desc");
+    return values;
+  }, [assignments]);
   const { logout } = useContext(AuthContext);
-  const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
-  const [loadedAssignments, setLoadedAssignments] = useState<ItemProperties[]>([]);
-  const [searchAssignment, setSearchAssignment] = useState<string>("");
-  const [filter, setFilter] = useState<string>("");
-  const [loadedNumber, setLoadedNumber] = useState(6);
   log("render");
   const handleLogout = () => {
     log("handleLogin...");
@@ -56,29 +83,14 @@ const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
       </IonHeader>
       <IonContent>
         <IonLoading isOpen={fetching} message="Fetching" />
-        {/*{<IonToast isOpen={!networkStatus.connected} duration={2000} message={"No internet connection! Using data stored locally!"}/>}*/}
-        {loadedAssignments &&
-          loadedAssignments
-            .filter((assign) => {
-              if (filter === "") return true;
-              else return assign.date === filter;
-            })
-            .filter((assign) => assign.title.indexOf(searchAssignment) >= 0)
-            .map(({ _id, title, date, description, pupilID, version, photoURL }) => {
-              return (
-                <Item
-                  key={_id}
-                  _id={_id}
-                  title={title}
-                  date={date}
-                  description={description}
-                  pupilID={pupilID}
-                  version={version}
-                  photoURL={photoURL}
-                  onClick={(id) => history.push(`/assignment/${id}`)}
-                />
-              );
-            })}
+        <IonToast
+          isOpen={!networkStatus.connected}
+          duration={2000}
+          message={"No internet connection! Using data stored locally!"}
+        />
+        {sortedMessages.map((m) => (
+          <Item sender={m.sender} unread={m.unread} messages={m.messages} key={m.sender} />
+        ))}
         <IonLoading isOpen={fetching} message="Fetching items" />
         {fetchingError && <IonAlert isOpen={true} message={"No internet connection! Using data stored locally!"} />}
       </IonContent>

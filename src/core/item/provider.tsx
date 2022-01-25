@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useEffect } from "react";
 import PropTypes from "prop-types";
 import { getLogger } from "../index";
 import { ItemProperties } from "./ItemProperties";
-import { createItem, getAllItems, newWebSocket, updateItem } from "./api";
+import { getAllItems, newWebSocket, updateItem } from "./api";
 import { AuthContext } from "../auth/provider";
 import { useImmerReducer } from "use-immer";
 import { Draft } from "immer";
@@ -22,7 +22,7 @@ export interface ItemState {
   fetchingError?: Error | null;
   saving: boolean;
   savingError?: Error | null;
-  saveAssignment?: SaveAssignmentFunction;
+  saveAssignment: SaveAssignmentFunction;
   resolveConflict?: ResolveConflictFunction;
   getConflict?: GetConflictFunction;
 }
@@ -51,6 +51,7 @@ interface ActionProps {
 const initialState: ItemState = {
   fetching: false,
   saving: false,
+  saveAssignment: async (item) => {},
 };
 
 const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (state, { type, payload }) => {
@@ -66,9 +67,9 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
     case ActionType.SAVE_ITEM_SUCCEEDED:
       const items = [...(state.assignments || [])];
       const item = payload.assignment;
-      const index = items.findIndex((it) => it._id === item._id);
+      const index = items.findIndex((it) => it.id === item.id);
       if (index === -1) {
-        items.splice(0, 0, item);
+        items.push(item);
       } else {
         items[index] = item;
       }
@@ -78,7 +79,7 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
     case ActionType.UPDATED_ITEM_ON_SERVER:
       const elems = [...(state.assignments || [])];
       const elem = payload.assignment;
-      const ind = elems.findIndex((it) => it._id === elem._id);
+      const ind = elems.findIndex((it) => it.id === elem.id);
       elems[ind] = elem;
       return { ...state, assignments: elems };
     default:
@@ -147,21 +148,14 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     };
 
     async function fetchAssignments() {
-      if (!token?.trim()) {
-        return;
-      }
       try {
         log("fetchAssignments started");
         dispatch({ type: ActionType.FETCH_ITEMS_STARTED });
-        let conf = await Storage.get({ key: "conflictingData" });
-        conflicts = JSON.parse(conf.value || "[]");
-        if (!conflicts || conflicts.length === 0) {
-          const items = await getAllItems(token);
-          log("fetchAssignments succeeded");
-          if (!canceled) {
-            dispatch({ type: ActionType.FETCH_ITEMS_SUCCEEDED, payload: { items } });
-          }
-        } else await getLocalData();
+        const items = await getAllItems(token);
+        log("fetchAssignments succeeded");
+        if (!canceled) {
+          dispatch({ type: ActionType.FETCH_ITEMS_SUCCEEDED, payload: { items } });
+        }
       } catch (error) {
         await getLocalData();
       }
@@ -182,7 +176,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     try {
       log("saveItem started");
       dispatch({ type: ActionType.SAVE_ITEM_STARTED });
-      const savedItem = await (assignment._id ? updateItem(token, assignment) : createItem(token, assignment));
+      const savedItem = await updateItem(token, assignment);
       log("saveItem succeeded");
       dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: savedItem } });
     } catch (error) {
@@ -194,18 +188,13 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     let canceled = false;
     log("wsEffect - connecting");
     let closeWebSocket: () => void;
-    if (token?.trim()) {
-      closeWebSocket = newWebSocket(token, (message) => {
-        if (canceled) {
-          return;
-        }
-        const { type, payload: assignment } = message;
-        log(`ws message, item ${type}`);
-        if (type === "created" || type === "updated") {
-          dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: assignment } });
-        }
-      });
-    }
+    closeWebSocket = newWebSocket(token, (message) => {
+      if (canceled) {
+        return;
+      }
+      log(`ws message, item ${message}`);
+      dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: message } });
+    });
     return () => {
       log("wsEffect - disconnecting");
       canceled = true;

@@ -3,7 +3,7 @@ import { authConfig, baseUrl, getLogger, withLogs } from "../index";
 import { ItemProperties } from "./ItemProperties";
 import { Storage } from "@capacitor/storage";
 
-const assignmentUrl = `http://${baseUrl}/api/assignment`;
+const assignmentUrl = `http://${baseUrl}/message`;
 
 export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token) => {
   let res = axios.get(assignmentUrl, authConfig(token));
@@ -18,19 +18,14 @@ export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token)
 
 export const updateItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
   // replace with whatever
-  item.version = new Date().toUTCString();
-  return withLogs(axios.patch(assignmentUrl, item, authConfig(token)), "updateItem");
+  return withLogs(axios.put(assignmentUrl + "/" + item.id, item, authConfig(token)), "updateItem");
 };
 
 export const createItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
-  item.version = new Date().toUTCString();
   return withLogs(axios.post(assignmentUrl, item, authConfig(token)), "createItem");
 };
 
-interface MessageData {
-  type: string;
-  payload: ItemProperties;
-}
+interface MessageData extends ItemProperties {}
 
 const log = getLogger("ws");
 
