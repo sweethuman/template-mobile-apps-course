@@ -90,6 +90,17 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
   const { token } = useContext(AuthContext);
   const [state, dispatch] = useImmerReducer<ItemState, ActionProps>(reducer, initialState);
   const { assignments, fetching, fetchingError, saving, savingError } = state;
+  const getLocalData = useCallback(async () => {
+    let localAssignments = await Storage.keys().then((localStorageData: { keys: string | any[] }) => {
+      for (let i = 0; i < localStorageData.keys.length; i++)
+        if (localStorageData.keys[i].valueOf().includes("assignments"))
+          return Storage.get({ key: localStorageData.keys[i] });
+    });
+    dispatch({
+      type: ActionType.FETCH_ITEMS_SUCCEEDED,
+      payload: { items: JSON.parse(localAssignments?.value || "{}") },
+    });
+  }, [dispatch]);
   useEffect(getAssignmentsEffect, [dispatch, getLocalData, token]);
   useEffect(wsEffect, [dispatch, token]);
 
@@ -133,18 +144,6 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
   }
 
   function setPhotosToLocalStorage() {}
-
-  async function getLocalData() {
-    let localAssignments = await Storage.keys().then((localStorageData: { keys: string | any[] }) => {
-      for (let i = 0; i < localStorageData.keys.length; i++)
-        if (localStorageData.keys[i].valueOf().includes("assignments"))
-          return Storage.get({ key: localStorageData.keys[i] });
-    });
-    dispatch({
-      type: ActionType.FETCH_ITEMS_SUCCEEDED,
-      payload: { items: JSON.parse(localAssignments?.value || "{}") },
-    });
-  }
 
   async function saveAssignmentCallback(assignment: ItemProperties) {
     // try {

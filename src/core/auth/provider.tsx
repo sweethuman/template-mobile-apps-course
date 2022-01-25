@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import { getLogger } from "../index";
 import { login as loginApi } from "./api";
@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     async function authenticate() {
-      var token = await Storage.get({ key: "currentToken" });
+      const token = await Storage.get({ key: "currentToken" });
       if (token.value) {
         setState({
           ...state,
