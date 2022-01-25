@@ -39,9 +39,7 @@ const App: React.FC = () => {
           <IonSplitPane contentId="main">
             <Menu />
             <IonRouterOutlet id="main">
-              <Route path="/" exact={true}>
-                <Redirect to="/page/Inbox" />
-              </Route>
+              <Route exact path="/" render={() => <Redirect to="/assignments" />} />
               <Route path="/page/:name" exact={true}>
                 <Page />
               </Route>
@@ -51,7 +49,6 @@ const App: React.FC = () => {
                 <PrivateRoute path="/assignment" component={ItemDetails} exact={true} />
                 <PrivateRoute path="/assignment/:id" component={ItemDetails} exact={true} />
               </ItemProvider>
-              <Route exact path="/" render={() => <Redirect to="/assignments" />} />
             </IonRouterOutlet>
           </IonSplitPane>
         </AuthProvider>
