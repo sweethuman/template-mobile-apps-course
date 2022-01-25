@@ -16,6 +16,12 @@ export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token)
   return withLogs(res, "getAssignments");
 };
 
+export const updateItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
+  // replace with whatever
+  item.version = new Date().toUTCString();
+  return withLogs(axios.patch(assignmentUrl, item, authConfig(token)), "updateItem");
+};
+
 export const createItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
   item.version = new Date().toUTCString();
   return withLogs(axios.post(assignmentUrl, item, authConfig(token)), "createItem");

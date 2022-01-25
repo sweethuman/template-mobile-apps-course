@@ -2,13 +2,13 @@ import React, { useCallback, useContext, useEffect } from "react";
 import PropTypes from "prop-types";
 import { getLogger } from "../index";
 import { ItemProperties } from "./ItemProperties";
-import { getAllItems, newWebSocket } from "./api";
+import { createItem, getAllItems, newWebSocket, updateItem } from "./api";
 import { AuthContext } from "../auth/provider";
-import { Plugins } from "@capacitor/core";
 import { useImmerReducer } from "use-immer";
 import { Draft } from "immer";
+import { Storage } from "@capacitor/storage";
+import { useNetwork } from "../useNetwork";
 
-const { Storage } = Plugins;
 const log = getLogger("ItemProvider");
 
 type SaveAssignmentFunction = (item: ItemProperties) => Promise<any>;
@@ -26,6 +26,12 @@ export interface ItemState {
   resolveConflict?: ResolveConflictFunction;
   getConflict?: GetConflictFunction;
 }
+
+enum ApiAction {
+  SAVE_ITEM,
+}
+
+interface ApiActionCache extends Array<{ action: ApiAction; payload: any }> {}
 
 enum ActionType {
   FETCH_ITEMS_STARTED = "FETCH_ITEMS_STARTED",
@@ -89,9 +95,10 @@ interface AssignmentProviderProps {
 export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) => {
   const { token } = useContext(AuthContext);
   const [state, dispatch] = useImmerReducer<ItemState, ActionProps>(reducer, initialState);
+  const { networkStatus } = useNetwork();
   const { assignments, fetching, fetchingError, saving, savingError } = state;
   const getLocalData = useCallback(async () => {
-    let localAssignments = await Storage.keys().then((localStorageData: { keys: string | any[] }) => {
+    let localAssignments = await Storage.keys().then((localStorageData) => {
       for (let i = 0; i < localStorageData.keys.length; i++)
         if (localStorageData.keys[i].valueOf().includes("assignments"))
           return Storage.get({ key: localStorageData.keys[i] });
@@ -104,8 +111,27 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
   useEffect(getAssignmentsEffect, [dispatch, getLocalData, token]);
   useEffect(wsEffect, [dispatch, token]);
 
-  const saveAssignment = useCallback<SaveAssignmentFunction>(saveAssignmentCallback, [token]);
+  const saveAssignment = useCallback<SaveAssignmentFunction>(saveAssignmentCallback, [dispatch, token]);
   // const [currentConflict, setCurrentConflict]=useState<ItemProperties>();
+  const retryApiActions = useCallback(async () => {
+    const { value } = await Storage.get({ key: "actionCache" });
+    if (!networkStatus.connected || value == null) return;
+    await Storage.set({ key: "actionCache", value: JSON.stringify([]) });
+    const cache: ApiActionCache = JSON.parse(value);
+    for (let act of cache) {
+      // TODO ADD WHATEVER NEW ACTIONS YOU NEED HERE
+      switch (act.action) {
+        case ApiAction.SAVE_ITEM:
+          await saveAssignment(act.payload);
+          break;
+        default:
+          console.error("Unknown action", act.action, act.payload);
+      }
+    }
+  }, [networkStatus.connected, saveAssignment]);
+  useEffect(() => {
+    retryApiActions();
+  }, [retryApiActions, networkStatus.connected]);
   log("returns");
   return (
     <AssignmentContext.Provider value={{ assignments, fetching, fetchingError, saving, savingError, saveAssignment }}>
@@ -145,16 +171,23 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
 
   function setPhotosToLocalStorage() {}
 
+  async function cacheApiAction(action: ApiAction, payload: any) {
+    const { value } = await Storage.get({ key: "actionCache" });
+    const cache: ApiActionCache = JSON.parse(value || "[]");
+    cache.push({ action, payload });
+    await Storage.set({ key: "actionCache", value: JSON.stringify(cache) });
+  }
+
   async function saveAssignmentCallback(assignment: ItemProperties) {
-    // try {
-    //   log('saveItem started');
-    //   dispatch({type: SAVE_ITEM_STARTED});
-    //   const savedItem = await (assignment._id ? updateAssignment(token, assignment) :createItem(token, assignment));
-    //   log('saveItem succeeded');
-    //   dispatch({type: SAVE_ITEM_SUCCEEDED, payload: {assignment: savedItem}});
-    // } catch (error) {
-    //   // await saveLocalData(assignment);
-    // }
+    try {
+      log("saveItem started");
+      dispatch({ type: ActionType.SAVE_ITEM_STARTED });
+      const savedItem = await (assignment._id ? updateItem(token, assignment) : createItem(token, assignment));
+      log("saveItem succeeded");
+      dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: savedItem } });
+    } catch (error) {
+      await cacheApiAction(ApiAction.SAVE_ITEM, assignment);
+    }
   }
 
   function wsEffect() {
