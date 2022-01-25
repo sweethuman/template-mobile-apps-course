@@ -16,7 +16,6 @@ import {
 } from "@ionic/react";
 import { AuthContext } from "../core/auth/provider";
 import { getLogger } from "../core";
-import "./login.css";
 
 const log = getLogger("Login");
 
