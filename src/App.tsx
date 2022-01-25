@@ -22,6 +22,12 @@ import "@ionic/react/css/display.css";
 
 /* Theme variables */
 import "./theme/variables.css";
+import { ItemProvider } from "./core/item/provider";
+import ItemDetails from "./pages/ItemDetails";
+import ItemsList from "./pages/ItemsList";
+import { AuthProvider } from "./core/auth/provider";
+import { Login } from "./pages/Login";
+import { PrivateRoute } from "./components/auth/PrivateRoute";
 
 setupIonicReact();
 
@@ -29,17 +35,26 @@ const App: React.FC = () => {
   return (
     <IonApp>
       <IonReactRouter>
-        <IonSplitPane contentId="main">
-          <Menu />
-          <IonRouterOutlet id="main">
-            <Route path="/" exact={true}>
-              <Redirect to="/page/Inbox" />
-            </Route>
-            <Route path="/page/:name" exact={true}>
-              <Page />
-            </Route>
-          </IonRouterOutlet>
-        </IonSplitPane>
+        <AuthProvider>
+          <IonSplitPane contentId="main">
+            <Menu />
+            <IonRouterOutlet id="main">
+              <Route path="/" exact={true}>
+                <Redirect to="/page/Inbox" />
+              </Route>
+              <Route path="/page/:name" exact={true}>
+                <Page />
+              </Route>
+              <Route path="/login" component={Login} exact={true} />
+              <ItemProvider>
+                <PrivateRoute path="/assignments" component={ItemsList} exact={true} />
+                <PrivateRoute path="/assignment" component={ItemDetails} exact={true} />
+                <PrivateRoute path="/assignment/:id" component={ItemDetails} exact={true} />
+              </ItemProvider>
+              <Route exact path="/" render={() => <Redirect to="/assignments" />} />
+            </IonRouterOutlet>
+          </IonSplitPane>
+        </AuthProvider>
       </IonReactRouter>
     </IonApp>
   );
