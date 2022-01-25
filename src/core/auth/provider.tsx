@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { getLogger } from "../index";
 import { login as loginApi } from "./api";
 import { Storage } from "@capacitor/storage";
+import { useImmer } from "use-immer";
 
 const log = getLogger("AuthProvider");
 
@@ -36,11 +37,11 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useImmer(initialState);
   const { isAuthenticated, isAuthenticating, authenticationError, pendingAuthentication, token } = state;
-  const login = useCallback(loginCallback, []);
-  const logout = useCallback(logoutCallback, []);
-  useEffect(authenticationEffect, [pendingAuthentication]);
+  const login = useCallback(loginCallback, [setState, state]);
+  const logout = useCallback(logoutCallback, [setState, state]);
+  useEffect(authenticationEffect, [pendingAuthentication, setState, state]);
   const value = { isAuthenticated, login, isAuthenticating, authenticationError, token, logout };
   log("render");
 

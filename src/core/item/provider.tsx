@@ -1,10 +1,12 @@
-import React, { useCallback, useContext, useEffect, useReducer } from "react";
+import React, { useCallback, useContext, useEffect } from "react";
 import PropTypes from "prop-types";
 import { getLogger } from "../index";
 import { ItemProperties } from "./ItemProperties";
 import { getAllItems, newWebSocket } from "./api";
 import { AuthContext } from "../auth/provider";
 import { Plugins } from "@capacitor/core";
+import { useImmerReducer } from "use-immer";
+import { Draft } from "immer";
 
 const { Storage } = Plugins;
 const log = getLogger("ItemProvider");
@@ -25,8 +27,18 @@ export interface ItemState {
   getConflict?: GetConflictFunction;
 }
 
+enum ActionType {
+  FETCH_ITEMS_STARTED = "FETCH_ITEMS_STARTED",
+  FETCH_ITEMS_SUCCEEDED = "FETCH_ITEMS_SUCCEEDED",
+  FETCH_ITEMS_FAILED = "FETCH_ITEMS_FAILED",
+  SAVE_ITEM_STARTED = "SAVE_ITEM_STARTED",
+  SAVE_ITEM_SUCCEEDED = "SAVE_ITEM_SUCCEEDED",
+  SAVE_ITEM_FAILED = "SAVE_ITEM_FAILED",
+  UPDATED_ITEM_ON_SERVER = "UPDATED_ITEM_ON_SERVER",
+}
+
 interface ActionProps {
-  type: string;
+  type: ActionType;
   payload?: any;
 }
 
@@ -35,25 +47,17 @@ const initialState: ItemState = {
   saving: false,
 };
 
-const FETCH_ITEMS_STARTED = "FETCH_ITEMS_STARTED";
-const FETCH_ITEMS_SUCCEEDED = "FETCH_ITEMS_SUCCEEDED";
-const FETCH_ITEMS_FAILED = "FETCH_ITEMS_FAILED";
-const SAVE_ITEM_STARTED = "SAVE_ITEM_STARTED";
-const SAVE_ITEM_SUCCEEDED = "SAVE_ITEM_SUCCEEDED";
-const SAVE_ITEM_FAILED = "SAVE_ITEM_FAILED";
-const UPDATED_ITEM_ON_SERVER = "UPDATED_ITEM_ON_SERVER";
-
-const reducer: (state: ItemState, action: ActionProps) => ItemState = (state, { type, payload }) => {
+const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (state, { type, payload }) => {
   switch (type) {
-    case FETCH_ITEMS_STARTED:
+    case ActionType.FETCH_ITEMS_STARTED:
       return { ...state, fetching: true, fetchingError: null };
-    case FETCH_ITEMS_SUCCEEDED:
+    case ActionType.FETCH_ITEMS_SUCCEEDED:
       return { ...state, assignments: payload.items, fetching: false };
-    case FETCH_ITEMS_FAILED:
+    case ActionType.FETCH_ITEMS_FAILED:
       return { ...state, fetchingError: payload.error, fetching: false };
-    case SAVE_ITEM_STARTED:
+    case ActionType.SAVE_ITEM_STARTED:
       return { ...state, savingError: null, saving: true };
-    case SAVE_ITEM_SUCCEEDED:
+    case ActionType.SAVE_ITEM_SUCCEEDED:
       const items = [...(state.assignments || [])];
       const item = payload.assignment;
       const index = items.findIndex((it) => it._id === item._id);
@@ -63,9 +67,9 @@ const reducer: (state: ItemState, action: ActionProps) => ItemState = (state, { 
         items[index] = item;
       }
       return { ...state, assignments: items, saving: false };
-    case SAVE_ITEM_FAILED:
+    case ActionType.SAVE_ITEM_FAILED:
       return { ...state, savingError: payload.error, saving: false };
-    case UPDATED_ITEM_ON_SERVER:
+    case ActionType.UPDATED_ITEM_ON_SERVER:
       const elems = [...(state.assignments || [])];
       const elem = payload.assignment;
       const ind = elems.findIndex((it) => it._id === elem._id);
@@ -84,10 +88,10 @@ interface AssignmentProviderProps {
 
 export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) => {
   const { token } = useContext(AuthContext);
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useImmerReducer<ItemState, ActionProps>(reducer, initialState);
   const { assignments, fetching, fetchingError, saving, savingError } = state;
-  useEffect(getAssignmentsEffect, [token]);
-  useEffect(wsEffect, [token]);
+  useEffect(getAssignmentsEffect, [dispatch, getLocalData, token]);
+  useEffect(wsEffect, [dispatch, token]);
 
   const saveAssignment = useCallback<SaveAssignmentFunction>(saveAssignmentCallback, [token]);
   // const [currentConflict, setCurrentConflict]=useState<ItemProperties>();
@@ -111,14 +115,14 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
       }
       try {
         log("fetchAssignments started");
-        dispatch({ type: FETCH_ITEMS_STARTED });
+        dispatch({ type: ActionType.FETCH_ITEMS_STARTED });
         let conf = await Storage.get({ key: "conflictingData" });
         conflicts = JSON.parse(conf.value || "[]");
         if (!conflicts || conflicts.length === 0) {
           const items = await getAllItems(token);
           log("fetchAssignments succeeded");
           if (!canceled) {
-            dispatch({ type: FETCH_ITEMS_SUCCEEDED, payload: { items } });
+            dispatch({ type: ActionType.FETCH_ITEMS_SUCCEEDED, payload: { items } });
           }
         } else await getLocalData();
       } catch (error) {
@@ -131,12 +135,15 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
   function setPhotosToLocalStorage() {}
 
   async function getLocalData() {
-    let localAssignments = await Storage.keys().then(function (localStorageData: { keys: string | any[] }) {
+    let localAssignments = await Storage.keys().then((localStorageData: { keys: string | any[] }) => {
       for (let i = 0; i < localStorageData.keys.length; i++)
         if (localStorageData.keys[i].valueOf().includes("assignments"))
           return Storage.get({ key: localStorageData.keys[i] });
     });
-    dispatch({ type: FETCH_ITEMS_SUCCEEDED, payload: { items: JSON.parse(localAssignments?.value || "{}") } });
+    dispatch({
+      type: ActionType.FETCH_ITEMS_SUCCEEDED,
+      payload: { items: JSON.parse(localAssignments?.value || "{}") },
+    });
   }
 
   async function saveAssignmentCallback(assignment: ItemProperties) {
@@ -163,7 +170,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
         const { type, payload: assignment } = message;
         log(`ws message, item ${type}`);
         if (type === "created" || type === "updated") {
-          dispatch({ type: SAVE_ITEM_SUCCEEDED, payload: { assignment: assignment } });
+          dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: assignment } });
         }
       });
     }
