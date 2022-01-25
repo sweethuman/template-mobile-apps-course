@@ -1,0 +1,7 @@
+{
+  "name": "Exam Template",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
