@@ -28,6 +28,7 @@ import ItemsList from "./pages/ItemsList";
 import { AuthProvider } from "./core/auth/provider";
 import { Login } from "./pages/Login";
 import { PrivateRoute } from "./components/auth/PrivateRoute";
+import Animation from "./pages/Animation";
 
 setupIonicReact();
 
@@ -44,6 +45,7 @@ const App: React.FC = () => {
                 <Page />
               </Route>
               <Route path="/login" component={Login} exact={true} />
+              <Route path="/animation" component={Animation} exact={true} />
               <ItemProvider>
                 <PrivateRoute path="/assignments" component={ItemsList} exact={true} />
                 <PrivateRoute path="/assignment" component={ItemDetails} exact={true} />
