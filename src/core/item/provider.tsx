@@ -8,6 +8,7 @@ import { useImmerReducer } from "use-immer";
 import { Draft } from "immer";
 import { Storage } from "@capacitor/storage";
 import { useNetwork } from "../useNetwork";
+import axios from "axios";
 
 const log = getLogger("ItemProvider");
 
@@ -188,7 +189,14 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
       dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: savedItem } });
     } catch (error) {
       // TODO ADD WHATEVER NEW ACTIONS YOU NEED HERE
-      dispatch({ type: ActionType.SAVE_ITEM_FAILED, payload: { error } });
+      if (axios.isAxiosError(error)) {
+        dispatch({
+          type: ActionType.SAVE_ITEM_FAILED,
+          payload: { error: new Error(error.response ? error.response.data.text : error.message) },
+        });
+      } else {
+        dispatch({ type: ActionType.SAVE_ITEM_FAILED, payload: { error } });
+      }
       await cacheApiAction(ApiAction.SAVE_ITEM, assignment);
     }
   }

@@ -58,7 +58,7 @@ const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
         <IonLoading isOpen={fetching} message="Fetching items" />
         <IonLoading isOpen={saving} message="Updating item" />
         {fetchingError && <IonAlert isOpen={true} message={"No internet connection! Using data stored locally!"} />}
-        {savingError && <IonAlert isOpen={true} message={"A save error happened.: " + savingError.message} />}
+        {savingError && <IonAlert isOpen={true} message={"A save error happened: " + savingError.message} />}
       </IonContent>
     </IonPage>
   );
