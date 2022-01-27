@@ -54,6 +54,7 @@ const initialState: ItemState = {
 };
 
 const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (state, { type, payload }) => {
+  console.log(type, payload);
   switch (type) {
     case ActionType.FETCH_ITEMS_STARTED:
       return { ...state, fetching: true, fetchingError: null };
@@ -66,9 +67,9 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
     case ActionType.SAVE_ITEM_SUCCEEDED:
       const items = [...(state.assignments || [])];
       const item = payload.assignment;
-      const index = items.findIndex((it) => it._id === item._id);
+      const index = items.findIndex((it) => it.id === item.id);
       if (index === -1) {
-        items.splice(0, 0, item);
+        items.push(item);
       } else {
         items[index] = item;
       }
@@ -78,7 +79,7 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
     case ActionType.UPDATED_ITEM_ON_SERVER:
       const elems = [...(state.assignments || [])];
       const elem = payload.assignment;
-      const ind = elems.findIndex((it) => it._id === elem._id);
+      const ind = elems.findIndex((it) => it.id === elem.id);
       elems[ind] = elem;
       return { ...state, assignments: elems };
     default:
@@ -93,7 +94,7 @@ interface AssignmentProviderProps {
 }
 
 export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) => {
-  const { token } = useContext(AuthContext);
+  const { token, questionIds } = useContext(AuthContext);
   const [state, dispatch] = useImmerReducer<ItemState, ActionProps>(reducer, initialState);
   const { networkStatus } = useNetwork();
   const { assignments, fetching, fetchingError, saving, savingError } = state;
@@ -108,7 +109,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
       payload: { items: JSON.parse(localAssignments?.value || "{}") },
     });
   }, [dispatch]);
-  useEffect(getAssignmentsEffect, [dispatch, getLocalData, token]);
+  useEffect(getAssignmentsEffect, [dispatch, getLocalData, questionIds, token]);
   useEffect(wsEffect, [dispatch, token]);
 
   const saveAssignment = useCallback<SaveAssignmentFunction>(saveAssignmentCallback, [dispatch, token]);
@@ -156,7 +157,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
         let conf = await Storage.get({ key: "conflictingData" });
         conflicts = JSON.parse(conf.value || "[]");
         if (!conflicts || conflicts.length === 0) {
-          const items = await getAllItems(token);
+          const items = await getAllItems(token, questionIds);
           log("fetchAssignments succeeded");
           if (!canceled) {
             dispatch({ type: ActionType.FETCH_ITEMS_SUCCEEDED, payload: { items } });
@@ -182,7 +183,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     try {
       log("saveItem started");
       dispatch({ type: ActionType.SAVE_ITEM_STARTED });
-      const savedItem = await (assignment._id ? updateItem(token, assignment) : createItem(token, assignment));
+      const savedItem = await (assignment.id ? updateItem(token, assignment) : createItem(token, assignment));
       log("saveItem succeeded");
       dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: savedItem } });
     } catch (error) {
@@ -199,11 +200,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
         if (canceled) {
           return;
         }
-        const { type, payload: assignment } = message;
-        log(`ws message, item ${type}`);
-        if (type === "created" || type === "updated") {
-          dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: assignment } });
-        }
+        dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: message } });
       });
     }
     return () => {

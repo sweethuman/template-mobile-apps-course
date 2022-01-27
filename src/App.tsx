@@ -23,7 +23,6 @@ import "@ionic/react/css/display.css";
 /* Theme variables */
 import "./theme/variables.css";
 import { ItemProvider } from "./core/item/provider";
-import ItemDetails from "./pages/ItemDetails";
 import ItemsList from "./pages/ItemsList";
 import { AuthProvider } from "./core/auth/provider";
 import { Login } from "./pages/Login";
@@ -48,8 +47,6 @@ const App: React.FC = () => {
               <Route path="/animation" component={Animation} exact={true} />
               <ItemProvider>
                 <PrivateRoute path="/assignments" component={ItemsList} exact={true} />
-                <PrivateRoute path="/assignment" component={ItemDetails} exact={true} />
-                <PrivateRoute path="/assignment/:id" component={ItemDetails} exact={true} />
               </ItemProvider>
             </IonRouterOutlet>
           </IonSplitPane>

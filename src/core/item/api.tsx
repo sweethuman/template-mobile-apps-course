@@ -3,34 +3,38 @@ import { authConfig, baseUrl, getLogger, withLogs } from "../index";
 import { ItemProperties } from "./ItemProperties";
 import { Storage } from "@capacitor/storage";
 
-const assignmentUrl = `http://${baseUrl}/api/assignment`;
+const assignmentUrl = `http://${baseUrl}/question`;
 
-export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token) => {
-  let res = axios.get(assignmentUrl, authConfig(token));
-  res.then(async function (res) {
-    await Storage.set({
-      key: `assignments`,
-      value: JSON.stringify(res.data),
-    });
+export const getAllItems: (token: string, qustionIds: number[]) => Promise<ItemProperties[]> = async (
+  token,
+  qustionIds,
+) => {
+  const qqs: ItemProperties[] = [];
+  for (let q of qustionIds) {
+    let res = await withLogs(axios.get<ItemProperties>(assignmentUrl + "/" + q, authConfig(token)), "getAssignments");
+    qqs.push(res);
+  }
+  await Storage.set({
+    key: `assignments`,
+    value: JSON.stringify(qqs),
   });
-  return withLogs(res, "getAssignments");
+  return qqs;
+};
+
+export const getItem: (token: string, qId: number) => Promise<ItemProperties> = (token, qId) => {
+  return withLogs(axios.get<ItemProperties>(assignmentUrl + "/" + qId, authConfig(token)), "getItem");
 };
 
 export const updateItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
   // replace with whatever
-  item.version = new Date().toUTCString();
   return withLogs(axios.patch(assignmentUrl, item, authConfig(token)), "updateItem");
 };
 
 export const createItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
-  item.version = new Date().toUTCString();
   return withLogs(axios.post(assignmentUrl, item, authConfig(token)), "createItem");
 };
 
-interface MessageData {
-  type: string;
-  payload: ItemProperties;
-}
+interface MessageData extends ItemProperties {}
 
 const log = getLogger("ws");
 

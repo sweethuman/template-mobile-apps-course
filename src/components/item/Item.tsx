@@ -1,23 +1,42 @@
-import React from "react";
-import { IonCardSubtitle, IonIcon, IonCardContent, IonCard, IonItem, IonImg } from "@ionic/react";
+import React, { useEffect, useState } from "react";
+import { IonCardContent, IonCardTitle, IonItem, IonLabel, IonList, IonRadio, IonRadioGroup } from "@ionic/react";
 import { ItemProperties } from "../../core/item/ItemProperties";
-import { book, pencil } from "ionicons/icons";
-import { IonCardTitle } from "@ionic/react";
 
 interface AssignmentPropertiesExt extends ItemProperties {
-  onClick: (_id?: string) => void;
+  onClick: (truth: boolean) => void;
 }
 
-const Item: React.FC<AssignmentPropertiesExt> = ({ _id, title, description, onClick }) => {
+const Item: React.FC<AssignmentPropertiesExt> = ({ id, text, options, indexCorrectOption, onClick }) => {
+  const [lock, setLock] = useState(false);
+  useEffect(() => {
+    setLock(false);
+  }, [id]);
   return (
     //LIST ITEM
-    <IonItem class={"card"} onClick={() => onClick(_id)}>
-      {/*<IonCardContent>*/}
-      {/*    <IonIcon icon={pencil} slot="end"/>*/}
-      {/*    <IonIcon icon={book} slot="end"/>*/}
-      {/*    <IonCardTitle>{title}</IonCardTitle>*/}
-      {/*    <IonCardSubtitle>{description}</IonCardSubtitle>*/}
-      {/*</IonCardContent>*/}
+    <IonItem class={"card"}>
+      <IonCardContent>
+        <IonCardTitle>{text}</IonCardTitle>
+        <IonCardContent>
+          <IonList>
+            <IonRadioGroup
+              onIonChange={(val) => {
+                setLock(true);
+                if (val.detail.value === indexCorrectOption) {
+                  onClick(true);
+                } else {
+                  onClick(false);
+                }
+              }}>
+              {options.map((option) => (
+                <IonItem key={option}>
+                  <IonLabel>{option}</IonLabel>
+                  <IonRadio value={option} disabled={lock} />
+                </IonItem>
+              ))}
+            </IonRadioGroup>
+          </IonList>
+        </IonCardContent>
+      </IonCardContent>
     </IonItem>
   );
 };
