@@ -21,7 +21,6 @@ const log = getLogger("Login");
 
 interface LoginState {
   username?: string;
-  password?: string;
 }
 
 export const Login: React.FC<RouteComponentProps> = ({ history }) => {
@@ -30,11 +29,11 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
   const [loginState, setState] = useState<LoginState>({});
 
   const [authError, setAuthError] = useState<boolean>(false);
-  const { username, password } = loginState;
+  const { username } = loginState;
   const handleLogin = () => {
     setAuthError(false);
     log("handleLogin...");
-    login?.(username, password);
+    login?.(username);
   };
   log("render");
   if (isAuthenticated) {
@@ -77,12 +76,6 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
           placeholder="Username"
           value={username}
           onIonChange={(e) => setState({ ...loginState, username: e.detail.value || "" })}
-        />
-        <IonInput
-          id={"passwd"}
-          placeholder="Password"
-          value={password}
-          onIonChange={(e) => setState({ ...loginState, password: e.detail.value || "" })}
         />
         <IonLoading isOpen={isAuthenticating} />
         {authenticationError && <IonToast isOpen={true} message={"Login error!"} duration={200} /> && !authError && (

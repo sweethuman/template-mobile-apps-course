@@ -52,8 +52,17 @@ const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
       <IonContent>
         <IonLoading isOpen={fetching} message="Fetching" />
         {assignments &&
-          assignments.map(({ id }) => {
-            return <Item key={id} id={id} onClick={(id) => history.push(`/assignment/${id}`)} />;
+          assignments.map(({ id, number, status, takenBy }) => {
+            return (
+              <Item
+                key={id}
+                id={id}
+                takenBy={takenBy}
+                number={number}
+                status={status}
+                onClick={(id) => history.push(`/assignment/${id}`)}
+              />
+            );
           })}
         <IonLoading isOpen={fetching} message="Fetching items" />
         {fetchingError && <IonAlert isOpen={true} message={"No internet connection! Using data stored locally!"} />}

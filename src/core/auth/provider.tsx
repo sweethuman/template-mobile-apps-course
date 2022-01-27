@@ -18,7 +18,6 @@ export interface AuthState {
   logout?: LogoutFunction;
   pendingAuthentication?: boolean;
   username?: string;
-  password?: string;
   token: string;
 }
 
@@ -47,21 +46,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 
-  function loginCallback(username?: string, password?: string): void {
+  function loginCallback(username?: string): void {
     log("login");
     setState((draft) => {
       draft.pendingAuthentication = true;
       draft.username = username;
-      draft.password = password;
     });
   }
 
-  function logoutCallback(username?: string, password?: string): void {
+  function logoutCallback(username?: string): void {
     log("logout");
     setState((draft) => {
       draft.isAuthenticated = false;
       draft.username = username;
-      draft.password = password;
     });
     (async () => {
       await Storage.clear();
@@ -94,8 +91,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setState((draft) => {
           draft.isAuthenticating = true;
         });
-        const { username, password } = state;
-        const { token } = await loginApi(username, password);
+        const { username } = state;
+        const token = username!;
         if (canceled) {
           return;
         }

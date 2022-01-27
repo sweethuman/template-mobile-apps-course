@@ -4,7 +4,7 @@ import { ItemProperties } from "./ItemProperties";
 import { Storage } from "@capacitor/storage";
 
 // TODO don't forget about the url
-const assignmentUrl = `http://${baseUrl}/api/assignment`;
+const assignmentUrl = `http://${baseUrl}/space`;
 
 export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token) => {
   let res = axios.get(assignmentUrl, authConfig(token));
