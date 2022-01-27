@@ -37,11 +37,11 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [state, setState] = useImmer(initialState);
+  const [state, setState] = useImmer<AuthState>(initialState);
   const { isAuthenticated, isAuthenticating, authenticationError, pendingAuthentication, token } = state;
-  const login = useCallback(loginCallback, [setState, state]);
-  const logout = useCallback(logoutCallback, [setState, state]);
-  useEffect(authenticationEffect, [pendingAuthentication, setState, state]);
+  const login = useCallback(loginCallback, [setState]);
+  const logout = useCallback(logoutCallback, [setState]);
+  useEffect(authenticationEffect, [pendingAuthentication]);
   const value = { isAuthenticated, login, isAuthenticating, authenticationError, token, logout };
   log("render");
 
@@ -49,21 +49,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   function loginCallback(username?: string, password?: string): void {
     log("login");
-    setState({
-      ...state,
-      pendingAuthentication: true,
-      username,
-      password,
+    setState((draft) => {
+      draft.pendingAuthentication = true;
+      draft.username = username;
+      draft.password = password;
     });
   }
 
   function logoutCallback(username?: string, password?: string): void {
     log("logout");
-    setState({
-      ...state,
-      isAuthenticated: false,
-      username,
-      password,
+    setState((draft) => {
+      draft.isAuthenticated = false;
+      draft.username = username;
+      draft.password = password;
     });
     (async () => {
       await Storage.clear();
@@ -80,12 +78,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     async function authenticate() {
       const token = await Storage.get({ key: "currentToken" });
       if (token.value) {
-        setState({
-          ...state,
-          token: token.value,
-          pendingAuthentication: false,
-          isAuthenticated: true,
-          isAuthenticating: false,
+        setState((draft) => {
+          draft.token = token.value!;
+          draft.pendingAuthentication = false;
+          draft.isAuthenticated = true;
+          draft.isAuthenticating = false;
         });
       }
       if (!pendingAuthentication) {
@@ -94,9 +91,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       try {
         log("auth...");
-        setState({
-          ...state,
-          isAuthenticating: true,
+        setState((draft) => {
+          draft.isAuthenticating = true;
         });
         const { username, password } = state;
         const { token } = await loginApi(username, password);
@@ -110,23 +106,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           value: token,
         });
 
-        setState({
-          ...state,
-          token,
-          pendingAuthentication: false,
-          isAuthenticated: true,
-          isAuthenticating: false,
+        setState((draft) => {
+          draft.token = token;
+          draft.pendingAuthentication = false;
+          draft.isAuthenticated = true;
+          draft.isAuthenticating = false;
         });
       } catch (err) {
         if (canceled) {
           return;
         }
         log("auth failed");
-        setState({
-          ...state,
-          authenticationError: err as Error,
-          pendingAuthentication: false,
-          isAuthenticating: false,
+        setState((draft) => {
+          draft.authenticationError = err as Error;
+          draft.pendingAuthentication = false;
+          draft.isAuthenticating = false;
         });
       }
     }
