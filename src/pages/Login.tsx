@@ -82,7 +82,7 @@ export const Login: React.FC<RouteComponentProps> = ({ history }) => {
           <CreateAnimation ref={animation} />
         )}
         <IonButton onClick={handleLogin} id={"loginBtn"}>
-          Login
+          Next
         </IonButton>
       </IonContent>
     </IonPage>

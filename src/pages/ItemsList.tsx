@@ -34,7 +34,7 @@ import { ItemProperties } from "../core/item/ItemProperties";
 const log = getLogger("ItemsList");
 
 const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
-  const { assignments, fetching, fetchingError } = useContext(AssignmentContext);
+  const { assignments, fetching, fetchingError, saving, savingError } = useContext(AssignmentContext);
   const { logout } = useContext(AuthContext);
   log("render");
   const handleLogout = () => {
@@ -53,19 +53,12 @@ const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
         <IonLoading isOpen={fetching} message="Fetching" />
         {assignments &&
           assignments.map(({ id, number, status, takenBy }) => {
-            return (
-              <Item
-                key={id}
-                id={id}
-                takenBy={takenBy}
-                number={number}
-                status={status}
-                onClick={(id) => history.push(`/assignment/${id}`)}
-              />
-            );
+            return <Item key={number} id={id} takenBy={takenBy} number={number} status={status} />;
           })}
         <IonLoading isOpen={fetching} message="Fetching items" />
+        <IonLoading isOpen={saving} message="Updating item" />
         {fetchingError && <IonAlert isOpen={true} message={"No internet connection! Using data stored locally!"} />}
+        {savingError && <IonAlert isOpen={true} message={"A save error happened.: " + savingError.message} />}
       </IonContent>
     </IonPage>
   );

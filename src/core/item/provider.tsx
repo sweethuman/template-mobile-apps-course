@@ -183,11 +183,12 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     try {
       log("saveItem started");
       dispatch({ type: ActionType.SAVE_ITEM_STARTED });
-      const savedItem = await (assignment.id ? updateItem(token, assignment) : createItem(token, assignment));
+      const savedItem = await updateItem(token, assignment);
       log("saveItem succeeded");
       dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: savedItem } });
     } catch (error) {
       // TODO ADD WHATEVER NEW ACTIONS YOU NEED HERE
+      dispatch({ type: ActionType.SAVE_ITEM_FAILED, payload: { error } });
       await cacheApiAction(ApiAction.SAVE_ITEM, assignment);
     }
   }
