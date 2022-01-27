@@ -68,6 +68,7 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
       const item = payload.assignment;
       const index = items.findIndex((it) => it.id === item.id);
       if (index === -1) {
+        // TODO don't forget about this when websocket
         items.splice(0, 0, item);
       } else {
         items[index] = item;
