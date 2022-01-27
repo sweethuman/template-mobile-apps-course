@@ -197,6 +197,7 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
       } else {
         dispatch({ type: ActionType.SAVE_ITEM_FAILED, payload: { error } });
       }
+      getAssignmentsEffect();
       await cacheApiAction(ApiAction.SAVE_ITEM, assignment);
     }
   }
