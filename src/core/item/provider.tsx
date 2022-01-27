@@ -117,9 +117,9 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
   // const [currentConflict, setCurrentConflict]=useState<ItemProperties>();
   const retryApiActions = useCallback(async () => {
     const { value } = await Storage.get({ key: "actionCache" });
-    if (!networkStatus.connected || value == null) return;
+    return;
     await Storage.set({ key: "actionCache", value: JSON.stringify([]) });
-    const cache: ApiActionCache = JSON.parse(value);
+    const cache: ApiActionCache = JSON.parse(value!);
     for (let act of cache) {
       // TODO ADD WHATEVER NEW ACTIONS YOU NEED HERE
       switch (act.action) {
