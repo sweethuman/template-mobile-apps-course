@@ -26,14 +26,14 @@ const ItemDetails: React.FC<DetailedAssignmentProperties> = ({ history, match })
   useEffect(() => {
     log("useEffect");
     const routeId = match.params.id || "";
-    const assignment = assignments?.find((it) => it._id === routeId);
+    const assignment = assignments?.find((it) => it.id === routeId);
     setItem(assignment);
     if (assignment) {
-      setTitle(assignment.title);
-      setDescription(assignment.description);
-      setDate(assignment.date);
-      setVersion(assignment.version);
-      setId(assignment._id || "");
+      // setTitle(assignment.title);
+      // setDescription(assignment.description);
+      // setDate(assignment.date);
+      // setVersion(assignment.version);
+      setId(assignment.id || "");
       // setLat(assignment.lat)
       // setLng(assignment.lng)
     }
@@ -50,9 +50,9 @@ const ItemDetails: React.FC<DetailedAssignmentProperties> = ({ history, match })
   //     let localItems=JSON.parse(locals.value||"[]");
   //     if(currentConflict)
   //       for(let i=0;i<localItems.length;i++)
-  //         if(currentConflict._id && localItems[i]._id===currentConflict._id) {
+  //         if(currentConflict.id && localItems[i].id===currentConflict.id) {
   //           localItems[i] = currentConflict;
-  //           conflicts.splice(conflicts.indexOf(currentConflict._id),1)
+  //           conflicts.splice(conflicts.indexOf(currentConflict.id),1)
   //           await Storage.set({key:`conflictingData`, value:JSON.stringify(conflicts)})
   //           await Storage.set({key:`assignments`, value:JSON.stringify(localItems)})
   //           history.push("/items")
@@ -75,8 +75,8 @@ const ItemDetails: React.FC<DetailedAssignmentProperties> = ({ history, match })
   //         lng:lng
   //       };
   //   resolveConflict && resolveConflict(myAssignment).then(async () => {
-  //     if (currentConflict && currentConflict._id) {
-  //       conflicts.splice(conflicts.indexOf(currentConflict._id), 1)
+  //     if (currentConflict && currentConflict.id) {
+  //       conflicts.splice(conflicts.indexOf(currentConflict.id), 1)
   //       await Storage.set({key: `conflictingData`, value: JSON.stringify(conflicts)})
   //     }
   //     history.push("/items")

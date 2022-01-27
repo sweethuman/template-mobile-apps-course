@@ -1,6 +1,7 @@
 import axios from "axios";
 import { baseUrl, config, withLogs } from "../index";
 
+// TODO don't forget about the url
 const loginUrl = `http://${baseUrl}/api/auth/login`;
 
 export interface AuthProps {

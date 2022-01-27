@@ -5,13 +5,13 @@ import { book, pencil } from "ionicons/icons";
 import { IonCardTitle } from "@ionic/react";
 
 interface AssignmentPropertiesExt extends ItemProperties {
-  onClick: (_id?: string) => void;
+  onClick: (id?: string) => void;
 }
 
-const Item: React.FC<AssignmentPropertiesExt> = ({ _id, title, description, onClick }) => {
+const Item: React.FC<AssignmentPropertiesExt> = ({ id, onClick }) => {
   return (
     //LIST ITEM
-    <IonItem class={"card"} onClick={() => onClick(_id)}>
+    <IonItem class={"card"} onClick={() => onClick(id)}>
       {/*<IonCardContent>*/}
       {/*    <IonIcon icon={pencil} slot="end"/>*/}
       {/*    <IonIcon icon={book} slot="end"/>*/}

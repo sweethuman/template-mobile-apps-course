@@ -3,6 +3,7 @@ import { authConfig, baseUrl, getLogger, withLogs } from "../index";
 import { ItemProperties } from "./ItemProperties";
 import { Storage } from "@capacitor/storage";
 
+// TODO don't forget about the url
 const assignmentUrl = `http://${baseUrl}/api/assignment`;
 
 export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token) => {
@@ -18,15 +19,15 @@ export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token)
 
 export const updateItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
   // replace with whatever
-  item.version = new Date().toUTCString();
+  // item.version = new Date().toUTCString();
   return withLogs(axios.patch(assignmentUrl, item, authConfig(token)), "updateItem");
 };
 
 export const createItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
-  item.version = new Date().toUTCString();
+  // item.version = new Date().toUTCString();
   return withLogs(axios.post(assignmentUrl, item, authConfig(token)), "createItem");
 };
-
+// TODO don't forget to change stuff here if you need it
 interface MessageData {
   type: string;
   payload: ItemProperties;

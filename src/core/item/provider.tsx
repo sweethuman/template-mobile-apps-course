@@ -66,7 +66,7 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
     case ActionType.SAVE_ITEM_SUCCEEDED:
       const items = [...(state.assignments || [])];
       const item = payload.assignment;
-      const index = items.findIndex((it) => it._id === item._id);
+      const index = items.findIndex((it) => it.id === item.id);
       if (index === -1) {
         items.splice(0, 0, item);
       } else {
@@ -78,7 +78,7 @@ const reducer: (draft: Draft<ItemState>, action: ActionProps) => ItemState = (st
     case ActionType.UPDATED_ITEM_ON_SERVER:
       const elems = [...(state.assignments || [])];
       const elem = payload.assignment;
-      const ind = elems.findIndex((it) => it._id === elem._id);
+      const ind = elems.findIndex((it) => it.id === elem.id);
       elems[ind] = elem;
       return { ...state, assignments: elems };
     default:
@@ -182,10 +182,11 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     try {
       log("saveItem started");
       dispatch({ type: ActionType.SAVE_ITEM_STARTED });
-      const savedItem = await (assignment._id ? updateItem(token, assignment) : createItem(token, assignment));
+      const savedItem = await (assignment.id ? updateItem(token, assignment) : createItem(token, assignment));
       log("saveItem succeeded");
       dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: savedItem } });
     } catch (error) {
+      // TODO ADD WHATEVER NEW ACTIONS YOU NEED HERE
       await cacheApiAction(ApiAction.SAVE_ITEM, assignment);
     }
   }
@@ -204,6 +205,8 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
         if (type === "created" || type === "updated") {
           dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: assignment } });
         }
+        // TODO don't forget about this one
+        //dispatch({ type: ActionType.SAVE_ITEM_SUCCEEDED, payload: { assignment: message } });
       });
     }
     return () => {

@@ -36,11 +36,6 @@ const log = getLogger("ItemsList");
 const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
   const { assignments, fetching, fetchingError } = useContext(AssignmentContext);
   const { logout } = useContext(AuthContext);
-  const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
-  const [loadedAssignments, setLoadedAssignments] = useState<ItemProperties[]>([]);
-  const [searchAssignment, setSearchAssignment] = useState<string>("");
-  const [filter, setFilter] = useState<string>("");
-  const [loadedNumber, setLoadedNumber] = useState(6);
   log("render");
   const handleLogout = () => {
     log("handleLogin...");
@@ -56,29 +51,10 @@ const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
       </IonHeader>
       <IonContent>
         <IonLoading isOpen={fetching} message="Fetching" />
-        {/*{<IonToast isOpen={!networkStatus.connected} duration={2000} message={"No internet connection! Using data stored locally!"}/>}*/}
-        {loadedAssignments &&
-          loadedAssignments
-            .filter((assign) => {
-              if (filter === "") return true;
-              else return assign.date === filter;
-            })
-            .filter((assign) => assign.title.indexOf(searchAssignment) >= 0)
-            .map(({ _id, title, date, description, pupilID, version, photoURL }) => {
-              return (
-                <Item
-                  key={_id}
-                  _id={_id}
-                  title={title}
-                  date={date}
-                  description={description}
-                  pupilID={pupilID}
-                  version={version}
-                  photoURL={photoURL}
-                  onClick={(id) => history.push(`/assignment/${id}`)}
-                />
-              );
-            })}
+        {assignments &&
+          assignments.map(({ id }) => {
+            return <Item key={id} id={id} onClick={(id) => history.push(`/assignment/${id}`)} />;
+          })}
         <IonLoading isOpen={fetching} message="Fetching items" />
         {fetchingError && <IonAlert isOpen={true} message={"No internet connection! Using data stored locally!"} />}
       </IonContent>
