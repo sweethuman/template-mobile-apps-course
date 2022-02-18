@@ -52,8 +52,8 @@ const ItemsList: React.FC<RouteComponentProps> = ({ history }) => {
       <IonContent>
         <IonLoading isOpen={fetching} message="Fetching" />
         {assignments &&
-          assignments.map(({ id, number, status, takenBy }) => {
-            return <Item key={number} id={id} takenBy={takenBy} number={number} status={status} />;
+          assignments.map(({ id,desiredBy, name, takenBy }) => {
+            return <Item key={id} id={id} takenBy={takenBy} name={name} desiredBy={desiredBy} />;
           })}
         <IonLoading isOpen={fetching} message="Fetching items" />
         <IonLoading isOpen={saving} message="Updating item" />

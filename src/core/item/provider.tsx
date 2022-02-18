@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useEffect } from "react";
 import PropTypes from "prop-types";
 import { getLogger } from "../index";
 import { ItemProperties } from "./ItemProperties";
-import { createItem, getAllItems, newWebSocket, updateItem } from "./api";
+import { getAllItems, newWebSocket, updateItem } from "./api";
 import { AuthContext } from "../auth/provider";
 import { useImmerReducer } from "use-immer";
 import { Draft } from "immer";
@@ -32,7 +32,8 @@ enum ApiAction {
   SAVE_ITEM,
 }
 
-interface ApiActionCache extends Array<{ action: ApiAction; payload: any }> {}
+interface ApiActionCache extends Array<{ action: ApiAction; payload: any }> {
+}
 
 enum ActionType {
   FETCH_ITEMS_STARTED = "FETCH_ITEMS_STARTED",
@@ -171,7 +172,8 @@ export const ItemProvider: React.FC<AssignmentProviderProps> = ({ children }) =>
     }
   }
 
-  function setPhotosToLocalStorage() {}
+  function setPhotosToLocalStorage() {
+  }
 
   async function cacheApiAction(action: ApiAction, payload: any) {
     const { value } = await Storage.get({ key: "actionCache" });

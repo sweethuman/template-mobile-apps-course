@@ -4,7 +4,7 @@ import { ItemProperties } from "./ItemProperties";
 import { Storage } from "@capacitor/storage";
 
 // TODO don't forget about the url
-const assignmentUrl = `http://${baseUrl}/space`;
+const assignmentUrl = `http://${baseUrl}/asset`;
 
 export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token) => {
   let res = axios.get(assignmentUrl, authConfig(token));
@@ -20,7 +20,7 @@ export const getAllItems: (token: string) => Promise<ItemProperties[]> = (token)
 export const updateItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {
   // replace with whatever
   // item.version = new Date().toUTCString();
-  return withLogs(axios.put(assignmentUrl + "/" + item.id, item, authConfig(token)), "updateItem");
+  return withLogs(axios.patch(assignmentUrl + "/" + item.id, item, authConfig(token)), "updateItem");
 };
 
 export const createItem: (token: string, item: ItemProperties) => Promise<ItemProperties[]> = (token, item) => {

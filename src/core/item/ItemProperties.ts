@@ -1,6 +1,6 @@
 export interface ItemProperties {
   id: string;
-  number: string;
-  status: "taken" | "free";
+  name: string,
   takenBy: string;
+  desiredBy: string[];
 }

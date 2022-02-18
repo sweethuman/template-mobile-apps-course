@@ -6,39 +6,62 @@ import { AssignmentContext } from "../../core/item/provider";
 
 interface AssignmentPropertiesExt extends ItemProperties {}
 
-const Item: React.FC<AssignmentPropertiesExt> = ({ id, number, status, takenBy }) => {
+const Item: React.FC<AssignmentPropertiesExt> = ({ id,name, takenBy,desiredBy }) => {
   const { token } = useContext(AuthContext);
   const { saveAssignment } = useContext(AssignmentContext);
   const [expanded, setExpanded] = useState(false);
-  const takeSpace = useCallback(() => {
+  const takeAction = useCallback(() => {
     if (saveAssignment) {
-      saveAssignment({ id, number, status: "taken", takenBy: token });
+      if(takenBy === token) {
+        saveAssignment({id: id, name: name, takenBy: "", desiredBy: desiredBy})
+      }else if(takenBy == null || takenBy == ""){
+        const newDesire = desiredBy.filter((val) => val != token);
+        saveAssignment({id: id, name: name, takenBy: token, desiredBy: newDesire})
+      }else if(desiredBy.includes(token)){
+        const newDesire = desiredBy.filter((val) => val != token);
+        saveAssignment({id: id, name: name, takenBy: takenBy, desiredBy: newDesire})
+      }else{
+        saveAssignment({id: id, name: name, takenBy: takenBy, desiredBy: [...desiredBy, token]})
+      }
     }
-  }, [id, number, saveAssignment, token]);
-  const releaseSpace = useCallback(() => {
-    if (saveAssignment) {
-      saveAssignment({ id, number, status: "free", takenBy: "" });
+  }, [id,name, takenBy, desiredBy, saveAssignment, token]);
+  const bgColor = useMemo(() => {
+    if(takenBy === token) {
+      return "red"
+    }else if(takenBy == null || takenBy == ""){
+      return "green"
+    }else if(desiredBy.includes(token)){
+      return "yellow"
+    }else{
+      return "white"
     }
-  }, [id, number, saveAssignment]);
+  }, [takenBy, desiredBy, token]);
   const actionButton = useMemo(() => {
-    if (status == "free") {
-      return <IonButton onClick={takeSpace}>Take</IonButton>;
-    } else if (status == "taken" && takenBy == token) {
-      return <IonButton onClick={releaseSpace}>Release</IonButton>;
+    let text = "";
+    if(takenBy === token) {
+      text = "Return"
+    }else if(takenBy == null || takenBy == ""){
+      text = "Take"
+    }else if(desiredBy.includes(token)){
+      text = "Remove request"
+    }else{
+      text = "Add request"
     }
-    return <IonLabel>This is already taken and you can't do anything about it.</IonLabel>;
-  }, [releaseSpace, status, takeSpace, takenBy, token]);
+    return <IonButton onClick={takeAction}>{text}</IonButton>;
+  }, [takenBy, desiredBy, token, takeAction]);
   return (
     //LIST ITEM
-    <IonItem class={"card"}>
-      <IonCardContent>
+    <IonItem class={"card"} onClick={() => setExpanded((val) => !val)}>
+      <IonCardContent  style={{backgroundColor: bgColor}}>
         <IonCardTitle>
-          {number} - {status}
+          {name}
         </IonCardTitle>
-        <IonCardSubtitle>
-          <IonButton onClick={() => setExpanded((val) => !val)}>Expand</IonButton>
-        </IonCardSubtitle>
-        {expanded ? <IonCardContent>{actionButton}</IonCardContent> : null}
+        {expanded ? <IonCardContent>
+          <IonCardSubtitle>
+            Desired by: {desiredBy.join(", ")}
+          </IonCardSubtitle>
+          <IonCardSubtitle>{actionButton}</IonCardSubtitle>
+        </IonCardContent> : null}
       </IonCardContent>
     </IonItem>
   );
