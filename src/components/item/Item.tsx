@@ -26,12 +26,13 @@ const Item: React.FC<AssignmentPropertiesExt> = ({ id,name, takenBy,desiredBy })
     }
   }, [id,name, takenBy, desiredBy, saveAssignment, token]);
   const bgColor = useMemo(() => {
+    console.log(desiredBy, token)
     if(takenBy === token) {
       return "red"
-    }else if(takenBy == null || takenBy == ""){
-      return "green"
     }else if(desiredBy.length != 0 && desiredBy[desiredBy.length - 1] == token){
       return "yellow"
+    }else if(takenBy == null || takenBy == ""){
+      return "green"
     }else{
       return "white"
     }
